@@ -26,8 +26,9 @@ def naiveb_classifier(table, header):
 
     return 0
 
-def nearest_neighbors(table, header):
+def decision_tree(table, header):
     #Uses K nearest neighbors to classify a given tree
+    attributes= header
 
     return 0
 
