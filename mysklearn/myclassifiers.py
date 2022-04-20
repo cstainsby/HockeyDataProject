@@ -1,7 +1,6 @@
 import math
 import operator
 import numpy as np
-import graphviz 
 import os
 
 from mysklearn import myutils
@@ -363,19 +362,21 @@ class MyDecisionTreeClassifier:
             Store the tree in the tree attribute.
             Use attribute indexes to construct default attribute names (e.g. "att0", "att1", ...).
         """
-        # TODO: programmatically extract the header (e.g. ["att0", 
-        # "att1", ...])
-        # and extract the attribute domains
-        header = ["att" + str(i) for i in range(len(X_train[0]))]
-        # now, I advise stitching X_train and y_train together
+        self.X_train = X_train
+        self.y_train = y_train
         train = [X_train[i] + [y_train[i]] for i in range(len(X_train))]
-        # next, make a copy of your header... tdidt() is going
-        # to modify the list
-        available_attributes = header.copy()
-        # also: recall that python is pass by object reference
-        self.tree = self.tdidt(train, available_attributes)
-        # note: unit test is going to assert that tree == interview_tree_solution
-        # (mind the attribute domain ordering)
+        available_attributes = []
+        for x in range(len(X_train[0])):
+            available_attributes.append(str("att" + str(x)))
+        domain = {}
+        for x in range(len(X_train[0])):
+            seen, count = myutils.get_freq(X_train, x)
+            domain[x] = seen
+        for type in domain:
+            domain[type].sort()
+        # also recall that python is pass by object reference
+        self.tree = myutils.tdidt(train, available_attributes, domain)
+
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
@@ -387,25 +388,12 @@ class MyDecisionTreeClassifier:
         Returns:
             y_predicted(list of obj): The predicted target y values (parallel to X_test)
         """
-        y_predicted = []
-        for test_instance in X_test:
-            position = self.tree
+        results = []
+        for test in X_test:
+            results.append(myutils.recurse_predict(test, self.tree))
 
-            while position[0] != "Leaf":
-                # at the current position find the attribute being split on
-                #   based on what the value is move down the branch which matches
-                attribute_being_split_on = position[1]
-                index_of_att = self.get_index_of_attribute(attribute_being_split_on)
-                value_of_instance = test_instance[index_of_att]
 
-                branches = position[2:]
-                branch_values = [branch[1] for branch in branches]
-
-                index_of_next_position = branch_values.index(value_of_instance)
-                position = position[index_of_next_position + 2][2]
-
-            y_predicted.append(position[1])
-        return y_predicted
+        return results
 
     def print_decision_rules(self, attribute_names=None, class_name="class"):
         """Prints the decision rules from the tree in the format
@@ -521,184 +509,7 @@ class MyDecisionTreeClassifier:
                 dot_file.write(INDENTATION + current_attribute_identifier + " -- " + backtrack_attribute_name + "[label=\"" + edge_label + "\"]\n")
         return current_attribute_identifier
 
-    # ----------------------------------------------------------------------------------
-    #   tdidt and tdidt helper functions
-    # ----------------------------------------------------------------------------------
-    def tdidt(self, current_instances,  available_attributes):
-        """
-        current_instances: table, with class appended, the current partition
-        avalible_attributes: column headers that are still avalible, parallel to current_instances
-        class_index: index of class col.
-        """
-        # basic approach (uses recursion!!):
-        print()
-        print()
-        print("-------------------Start-------------------")
-        print("available_attributes:", available_attributes)
-
-        # select an attribute to split on
-        attribute = self.select_attribute(current_instances, available_attributes)
-        available_attributes.remove(attribute)
-        tree = ["Attribute", attribute]
-
-        # group data by attribute domains (creates pairwise disjoint partitions)
-        attribute_domains_and_occurance = self.find_domain_of_attribute(current_instances, attribute)
-        partitions = self.partition_instances(available_attributes, attribute_domains_and_occurance.keys(), current_instances, attribute)
-
-        # for each partition, repeat unless one of the following occurs (base case)
-        for att_value, att_partition in partitions.items():
-            print("tree: ", self.tree)
-            print("curent attribute value:", att_value, len(att_partition))
-            value_subtree = ["Value", att_value]
-            #    CASE 1: all class labels of the partition are the same => make a leaf node
-            if len(att_partition) > 0 and self.all_same_class(att_partition):
-                print("CASE 1 all same class")
-                # TODO: make a leaf node
-                val_of_leaf =  att_partition[0][-1] # class
-                num_total_intances_at_level = len(current_instances)
-                num_in_leaf = len(att_partition)
-                leaf_node = ["Leaf", val_of_leaf,  num_in_leaf, num_total_intances_at_level]
-                value_subtree.append(leaf_node)
-
-            #    CASE 2: no more attributes to select (clash) => handle clash w/majority vote leaf node
-            elif len(att_partition) > 0 and len(available_attributes) == 0:
-                print("CASE 2 no more attributes")
-                # TODO: we have a mix of labels, handle clash with majority
-                # vote leaf node
-                print("partition: ", att_partition)
-
-            #    CASE 3: no more instances to partition (empty partition) => backtrack and replace attribute node with majority vote leaf node
-            elif len(att_partition) == 0:
-                print("CASE 3 empty partition")
-                # TODO: "backtrack" to replace the attribute node
-                # with a majority vote leaf node
-
-
-
-
-            else: # the previous conditions are all false... recurse!!
-                subtree = self.tdidt(att_partition, available_attributes.copy())
-                # note the copy
-                # TODO: append subtree to value_subtree and to tree
-                # appropriately
-                value_subtree.append(subtree) # append next attribute after split
-            tree.append(value_subtree) # append values being split on 
-
-        return tree
-
-    def select_attribute(self, current_instances, availible_attributes):
-        """
-        current_instances: the current partition
-        avalible_attributes:
-        """
-        # TODO: use entropy to compute and choose the attribute
-        # with the smallest Enew
-        # for now, we will just choose randomly
-        # return list parallel to X_train with the entropy of each col
-        entropy_vals = []
-        total_labels = len(current_instances)
-
-
-        list_of_value_index_dict = myutils.find_count_and_index_positions_of_each_col_items(current_instances)
-        # remove dictionaries that shouldnt be considered 
-        list_of_indices_that_should_be_considered =\
-             [self.get_index_of_attribute(attribute) for attribute in availible_attributes]
-        list_of_indices_that_should_be_removed =\
-            [i for i in range(len(availible_attributes)) if list_of_indices_that_should_be_considered.count(i) == 0]
-        for i in range(len(current_instances[0])-1, -1, -1):
-            if list_of_indices_that_should_be_removed.count(i) > 0:
-                list_of_value_index_dict.pop(i)
-
-
-        # the last index in the dict will be reserved for class labels
-        class_label_dict = list_of_value_index_dict[len(list_of_value_index_dict)-1]
-        keys_in_class_dict = class_label_dict.keys()
-
-        for i in range(0, len(list_of_value_index_dict) - 1):
-            # for each attribute we are going to find the entropy 
-            summation_term = 0
-
-            dict_of_attribute_indices = list_of_value_index_dict[i]
-            # find all unique classes avalible to each attribute
-            
-            keys_in_attribute_dict = list(dict_of_attribute_indices.keys())
-            for key in keys_in_attribute_dict:
-                num_instances_with_attribute_val = len(dict_of_attribute_indices[key])
-
-
-                # we need to total the ammount of the instances we are working with
-                #   are under each class label
-                for class_key in keys_in_class_dict:
-                    # calculate each summation term
-                    class_val_index_list = class_label_dict[class_key]
-                    attribute_val_index_list = dict_of_attribute_indices[key]
-                    num_indicies_in_common = myutils.indices_in_common(class_val_index_list, attribute_val_index_list)
-
-                    frac = num_indicies_in_common/num_instances_with_attribute_val
-                    
-                    if frac != 0:
-                        summation_term += -frac * math.log(frac, 2)
-
-            entropy_vals.append((num_instances_with_attribute_val/total_labels) * summation_term)
-
-        index_with_lowest_Enew = 0
-        lowest_entropy = entropy_vals[0]
-        print("Entropy vals: ", entropy_vals)
-        for i, entropy_val in enumerate(entropy_vals):
-            if entropy_val < lowest_entropy:
-                index_with_lowest_Enew = i
-        return availible_attributes[index_with_lowest_Enew]
-
-    def find_domain_of_attribute(self, current_instances, attribute):
-        """finds the attribute domains at the current level"""
-        domain_and_num_instances = {} # domain(option) : num occurences(int)
-        index_of_attribute = self.get_index_of_attribute(attribute)
-            
-        for instance in current_instances:
-            # if unique value found, add it to domain list
-            if list(domain_and_num_instances.keys()).count(instance[index_of_attribute]) == 0:
-                domain_and_num_instances[instance[index_of_attribute]] = 1
-            else:
-                domain_and_num_instances[instance[index_of_attribute]] += 1
-        return domain_and_num_instances
-
-
     def get_index_of_attribute(self, attribute_name):
-        """Because of our attribute naming convention, 
+        """Because of our attribute naming convention,
         we can look at the end of the string name to find the attributes original index"""
         return int(attribute_name[3:])
-            
-    
-    def partition_instances(self, available_attributes, attribute_domains, instances, split_attribute):
-        """group instances by the split attribute domains"""
-        # lets use a dictionary
-        partitions = {} # key (string): value (subtable)
-        att_index = self.get_index_of_attribute(split_attribute) # e.g. 0 for level
-        # att_domain = attribute_domains[att_index] # e.g. ["Junior", "Mid", "Senior"]
-        
-        for att_value in attribute_domains:
-            partitions[att_value] = []
-            
-            # loop through the current instances and for each value 
-            #   add it to its partition based on split attribute
-            for instance in instances:
-                if instance[att_index] == att_value:
-                    partitions[att_value].append(instance)
-
-        return partitions
-    
-    def all_same_class(self, partition_data):
-        """checks a partition to see if all values within it are the same class
-            partition_data: instances that are appended to the current partition"""
-        # the class attribute will always be appended to the end of the data
-        first_instance_class = ""
-        for i, instance in enumerate(partition_data):
-            if i == 0:
-                first_instance_class = instance[-1]
-            else:
-                if instance[-1] != first_instance_class:
-                    return False
-        return True
-
-
-    
