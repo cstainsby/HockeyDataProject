@@ -765,4 +765,5 @@ def recurse_rules(cur_tree, rule_start, attribute_names, class_label):
     return rule_list
 
 
-
+def seed(seed):
+    np.random.seed(seed)

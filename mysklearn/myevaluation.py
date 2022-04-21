@@ -128,53 +128,49 @@ def stratified_kfold_cross_validation(X, y, n_splits=5, random_state=None, shuff
         Loosely based on sklearn's StratifiedKFold split():
             https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedKFold.html#sklearn.model_selection.StratifiedKFold
     """
+    groups = []
+    seen = []
 
-    # group_by X data by its y label
-    y_appended_table = []
-    for i in range(len(y)):
-        y_appended_table.append(X[i])
-        y_appended_table[i].append(y[i])
-    group_names, group_subtables = myutils.group_by(y_appended_table, [str(i) for i in range(len(X[0]))], str(len(X[0]) - 1))
+    if random_state is not None:
+        myutils.seed(random_state)
 
-    # remove label from data after groupby used
-    for group in group_subtables:
-        for row in group:
-            row.pop(len(row) - 1)
-    for list in X:
-        list.pop(len(list) - 1)
+    if shuffle:
+        indecies = list(range(len(X)))
+        myutils.randomize_in_place(indecies)
+    else:
+        indecies = list(range(len(X)))
 
-    # group indices by label
-    group_subtable_indices = []
-    for i, group in enumerate(group_subtables):
-        group_subtable_indices.append([])
-        for j, record in enumerate(group):
-            #TODO error might come from repeated instances
-            group_subtable_indices[i].append(X.index(record))
+    for index in indecies:
+        if y[index] in seen:
+            seen_index = seen.index(y[index])
+            groups[seen_index].append(index)
+        else:
+            seen.append(y[index])
+            groups.append([index])
 
-    # split the indices into groups
-    evenly_divided_groups = [[] for i in range(n_splits)]
-    for i, partition in enumerate(group_subtable_indices):
-        split_partition = [partition[i:i+len(partition) // n_splits] for i in range(0, len(partition), len(partition) // n_splits)]
-        
-        for j, split in enumerate(split_partition):
-            evenly_divided_groups[j % n_splits] += split
 
-            # shuffle the groups if necessary
-            if shuffle is True:
-                np.random.seed(random_state)
-                np.random.shuffle(evenly_divided_groups[j%n_splits])
+    deck = []
 
-    # create train and test fold
-    X_train_folds = []
-    X_test_folds = []
-    for index_of_test, group in enumerate(evenly_divided_groups):
-        X_test_folds.append(group)
-        X_train_folds.append([])
-        for i, group in enumerate(evenly_divided_groups):
-            if i != index_of_test:
-                X_train_folds[index_of_test] += group
+    for row in groups:
+        for val in row:
+            deck.append(val)
 
-    return X_train_folds, X_test_folds 
+    train_folds = []
+    test_folds = []
+
+    for x in range(n_splits):
+        train_folds.append([])
+        test_folds.append([])
+
+    for x in range(len(deck)):
+        test_folds[x % n_splits].append(deck[x])
+
+    for x in range(len(test_folds)):
+        for val in deck:
+            if val not in test_folds[x]:
+                train_folds[x].append(val)
+
+    return train_folds, test_folds
 
 def bootstrap_sample(X, y=None, n_samples=None, random_state=None):
     """Split dataset into bootstrapped training set and out of bag test set.

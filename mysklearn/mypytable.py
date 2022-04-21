@@ -234,6 +234,8 @@ class MyPyTable:
             for j in range(0, len(self.data[i])):
                 if self.data[i][j] == "NA":
                     new_table.remove(self.data[i])
+                # elif self.data[i][j] == '':
+                #     new_table.remove(self.data[i])
 
         self.data = copy.deepcopy(new_table)
 
