@@ -1,6 +1,214 @@
 import numpy as np
 
 import math
+
+
+def find_frequency_of_each_element_in_list(input_list):
+    """finds each unique value and the frequency of that value
+
+        Args:
+            input_list(list): list of data
+        Returns:
+            item_label_list(list): all unique values found
+            parallel_frequency_list(list): the frequencies of those unique values
+    """
+    item_label_list = []            # name of the elements that were encountered
+    parallel_frequency_list = []    # frequencies of each of the elements
+
+    for item in input_list:
+        if item_label_list.count(item) == 0:
+            item_label_list.append(item)
+            parallel_frequency_list.append(1)
+        else:
+            existing_item_index = item_label_list.index(item)
+            parallel_frequency_list[existing_item_index] += 1
+
+    return item_label_list, parallel_frequency_list
+
+def pretty_print_labels_and_frequencies(labels, frequencies):
+    """prints a tables labels and frequencies in a somewhat "pretty" way 
+    """
+    print("Labels | Frequencies")
+
+    for i in range(len(labels)):
+        print(str(labels[i]) + ": " + str(frequencies[i]))
+
+def string_numeric_percentage_to_int(string_percent):
+    """converts a string percentage value into an int 
+
+        Args:
+            string_percent(str): the string percent value
+        Returns:
+            output(int): an integer percent value
+    """
+    i = 0
+    output = ""
+
+    # read through any leading spaces
+    while i < len(string_percent) and string_percent[i] == ' ':
+        i += 1
+
+    while i < len(string_percent) and string_percent[i] != '%' and string_percent[i] != ' ':
+        output += str(string_percent[i])
+        i += 1
+
+    return int(output)
+
+def normalize_list(list):
+    """finds all values in x and y where not "NA" in both 
+
+        Args:
+            x(list of float/int): x values
+            y(list of float/int): y values
+        Returns:
+            output_x(list): x cleaned list 
+            output_y(list): y cleaned list 
+        Note:
+            This is intended to find all values which x and y have existant values in common
+            to make a graph
+    """
+    normalized_list = []
+
+    min_val = min(list)
+    max_val = max(list)
+
+    for i in range(len(list)):
+        normalized_list.append((list[i] - min_val)/(max_val - min_val))
+
+    return normalized_list
+
+def remove_NA_vals(list):
+    """finds all values in x and y where not "NA" in both 
+
+        Args:
+            x(list of float/int): x values
+            y(list of float/int): y values
+        Returns:
+            output_x(list): x cleaned list 
+            output_y(list): y cleaned list 
+        Note:
+            This is intended to find all values which x and y have existant values in common
+            to make a graph
+    """
+    output_list = []
+    for item in list:
+        if item != "NA":
+            output_list.append(item)
+    
+    return output_list
+
+def find_all_non_NA_matches(x, y):
+    """finds all values in x and y where not "NA" in both 
+
+        Args:
+            x(list of float/int): x values
+            y(list of float/int): y values
+        Returns:
+            output_x(list): x cleaned list 
+            output_y(list): y cleaned list 
+        Note:
+            This is intended to find all values which x and y have existant values in common
+            to make a graph
+    """
+    output_x = []
+    output_y = []
+
+    for i in range(len(x)):
+        if x[i] != "NA" and y[i] != "NA":
+            output_x.append(x[i])
+            output_y.append(y[i])
+    
+    return output_x, output_y
+    
+def compute_slope_intercept(x, y):
+    """find correlation coefficient
+
+        Args:
+            x(list of float/int): x values
+            y(list of float/int): y values
+        Returns:
+            m(float): slope
+            b(float): intercept
+    """
+    numer = 0
+    denom = 0
+
+    avg_x = sum(x)/len(x)
+    avg_y = sum(y)/len(y)
+
+    for i in range(len(x)):
+        numer += ((x[i] - avg_x) * (y[i] - avg_y))
+        denom += ((x[i] - avg_x) ** 2)
+
+    m = numer/denom
+    b = avg_y - m * avg_x
+
+    return m, b
+
+def calculate_correlation_coefficient(x, y):
+    """find correlation coefficient
+
+        Args:
+            x(list of float/int): x values
+            y(list of float/int): y values
+        Returns:
+            r(float): correlation coefficient
+    """
+    numer = 0
+    x_denom = 0
+    y_denom = 0
+
+    avg_x = sum(x)/len(x)
+    avg_y = sum(y)/len(y)
+
+    for i in range(len(x)):
+        numer += ((x[i] - avg_x) * (y[i] - avg_y))
+        x_denom += (x[i] - avg_x) ** 2
+        y_denom += (y[i] - avg_y) ** 2
+    
+    r = numer / ((x_denom * y_denom) ** 0.5)
+
+    return r
+
+def calculate_covarience(x, y):
+    """find covarience
+
+        Args:
+            x(list of float/int): x values
+            y(list of float/int): y values
+        Returns:
+            cov(float): covarience
+    """
+    numer = 0
+    denom = 0
+
+    avg_x = sum(x)/len(x)
+    avg_y = sum(y)/len(y)
+
+    denom = len(x)
+
+    for i in range(len(x)):
+        numer += ((x[i] - avg_x) * (y[i] - avg_y))
+    
+    cov = numer / denom
+
+    return cov
+
+def compute_equal_width_cutoffs(values, num_bins):
+    """function from U3-Data-Analysis utils.py, finds equal length bins in a list of data
+    """
+    values_range = math.ceil(max(values)) - math.floor(min(values))
+    bin_width = values_range / num_bins # float
+    # since bin_width is a float, we shouldn't use range() to generate a list
+    # of cutoffs, use np.arange()
+    cutoffs = list(np.arange(min(values), max(values), bin_width))
+    cutoffs.append(max(values)) # exactly the max(values)
+    # to handle round off error... 
+    # if your application allows, we should convert to int
+    # or optionally round them
+    cutoffs = [round(cutoff, 2) for cutoff in cutoffs]
+    return cutoffs 
+
 # -------------------------------------------------
 #   pa4 utils
 # -------------------------------------------------
@@ -132,6 +340,22 @@ def group_by(table, header, groupby_col_name):
         groupby_val_subtable_index = group_names.index(groupby_val)
         group_subtables[groupby_val_subtable_index].append(row.copy())
     return group_names, group_subtables
+
+def unique_vals(list):
+    """Like groupby but using a list sorts 
+        list_of_sorting_lists(list of list of int val)
+        group_by_list(list of val)"""
+    seen_group_by_vals = []
+    parallel_numbered_vals = []
+
+    for i in range(len(list)):
+        if seen_group_by_vals.count(list[i]) == 0:
+            seen_group_by_vals.append(list[i])
+            parallel_numbered_vals.append(len(seen_group_by_vals) - 1)
+        else:
+            parallel_numbered_vals.append(seen_group_by_vals.index(list[i]))
+
+    return seen_group_by_vals, parallel_numbered_vals
 
 
 # -------------------------------------------------
