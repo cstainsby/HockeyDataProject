@@ -183,3 +183,36 @@ def discretize_ptspercent(table, index):
             row[index] = '9'
         elif val < 1:
             row[index] = '10'
+
+def discretize_srs(table, index):
+    for row in table:
+        val = float(row[index])
+        if val < -2.5:
+            row[index] = '1'
+        elif val < -2:
+            row[index] = '2'
+        elif val < -1.5:
+            row[index] = '3'
+        elif val < -1:
+            row[index] = '4'
+        elif val < -.5:
+            row[index] = '5'
+        elif val < 0:
+            row[index] = '6'
+        elif val < .5:
+            row[index] = '7'
+        elif val < 1:
+            row[index] = '8'
+        elif val < 1.5:
+            row[index] = '9'
+        elif val < 2:
+            row[index] = '10'
+        elif val < 2.5:
+            row[index] = '11'
+        elif val < 3:
+            row[index] = '12'
+
+def cup_level_added(table):
+    table.column_names.append("FINISH")
+
+
