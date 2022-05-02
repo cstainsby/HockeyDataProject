@@ -412,39 +412,9 @@ class MyDecisionTreeClassifier:
             class_name(str): A string to use for the class name in the decision rules
                 ("class" if a string is not provided and the default name "class" should be used).
         """
-        print()
-        print()
-        print("----------------------------------------------")
-        print("rules:")
-        curr_string = ["IF "]
-        self.print_descision_tree_recurr(attribute_names, self.tree, curr_string, class_name)
-
-    def print_descision_tree_recurr(self, attribute_names, curr_tree, curr_string, class_name=None):
-
-        if curr_tree[0] != "Leaf":
-            if attribute_names is not None:
-                attribute_name = attribute_names[self.get_index_of_attribute(curr_tree[1])]
-                curr_string.append(attribute_name)
-            else:
-                curr_string.append(curr_tree[1])
-
-            value_subtrees = curr_tree[2:] # all values edges reachable from current attribute
-            for value_subtree in value_subtrees:
-                if value_subtree[2][0] == "Leaf":
-                    curr_string.append(" THEN ")
-                else:
-                    curr_string.append(" AND ")
-                
-                self.print_descision_tree_recurr(attribute_names, value_subtree[2], curr_string)
-
-        else:
-            out_string = ""
-            for string in curr_string:
-                out_string += str(string)
-            if class_name is None:
-                print(out_string + "class = " + str(curr_tree[1]))
-            else:
-                print(out_string + class_name + "= " + str(curr_tree[1]))
+        list = myutils.recurse_rules(self.tree, "", attribute_names, class_name)
+        for row in list:
+            print(row)
 
         
 
@@ -492,7 +462,7 @@ class MyDecisionTreeClassifier:
             index_of_attribute = self.get_index_of_attribute(curr_tree[1])
             current_attribute_name = attribute_names[index_of_attribute] 
 
-        dot_file.write(INDENTATION + current_attribute_identifier + " [label=" + current_attribute_name + " shape=box]\n")
+        dot_file.write(INDENTATION + str(current_attribute_identifier) + " [label=" + str(current_attribute_name) + " shape=box]\n")
 
         for value in value_subtrees_accessable_from_attribute:
             next_subtree = value[2]
@@ -502,17 +472,17 @@ class MyDecisionTreeClassifier:
                 # make a random name to prevent naming collisions
                 leaf_name = next_subtree[1] + str(np.random.randint(0, 10000))
                 label = next_subtree[1] + " " + str(next_subtree[2]) + "/" + str(next_subtree[3]) # set the label as the value and the percent (frac)
-                dot_file.write(INDENTATION + leaf_name + " [label=\"" + label + "\"]\n")
+                dot_file.write(INDENTATION + str(leaf_name) + " [label=\"" + str(label) + "\"]\n")
 
                 edge_label = value[1] 
-                dot_file.write(INDENTATION + current_attribute_identifier + " -- " + leaf_name + "[label=\"" + edge_label + "\"]\n")
+                dot_file.write(INDENTATION + str(current_attribute_identifier) + " -- " + str(leaf_name) + "[label=\"" + str(edge_label) + "\"]\n")
             else:
                 backtrack_attribute_name = self.visualize_tree_recurr(attribute_names, dot_file, next_subtree)
 
                 # after recurse, add labeled edge between attribute and next node
                 edge_label = value[1]
                 
-                dot_file.write(INDENTATION + current_attribute_identifier + " -- " + backtrack_attribute_name + "[label=\"" + edge_label + "\"]\n")
+                dot_file.write(INDENTATION + str(current_attribute_identifier) + " -- " + str(backtrack_attribute_name) + "[label=\"" + str(edge_label) + "\"]\n")
         return current_attribute_identifier
 
     def get_index_of_attribute(self, attribute_name):

@@ -759,20 +759,20 @@ def recurse_rules(cur_tree, rule_start, attribute_names, class_label):
             if type(piece) == list:
                 if attribute_names is not None:
                     if len(rule_start) == 0:
-                        new_rule_start = "IF " + attribute_names[int(attribute[3])] + "=" + piece[1]
+                        new_rule_start = "IF " + str(attribute_names[int(attribute[3])]) + "=" + str(piece[1])
                     else:
-                        new_rule_start = rule_start + " AND " + attribute_names[int(attribute[3])] + "=" + piece[1]
+                        new_rule_start = str(rule_start) + " AND " + str(attribute_names[int(attribute[3])]) + "=" + str(piece[1])
                 else:
                     if len(rule_start) == 0:
-                        new_rule_start = "IF " + attribute + "=" + piece[1]
+                        new_rule_start = "IF " + str(attribute) + "=" + str(piece[1])
                     else:
-                        new_rule_start = rule_start + " AND " + attribute + "=" + piece[1]
+                        new_rule_start = str(rule_start) + " AND " + str(attribute) + "=" + str(piece[1])
                 returned_list = recurse_rules(piece[2], new_rule_start, attribute_names, class_label)
                 for val in returned_list:
                     rule_list.append(val)
 
     elif cur_tree[0] == "Leaf":
-        rule_start += " THEN " + class_label + "=" + cur_tree[1]
+        rule_start += " THEN " + str(class_label) + "=" + str(cur_tree[1])
         rule_list.append(rule_start)
         return rule_list
     return rule_list

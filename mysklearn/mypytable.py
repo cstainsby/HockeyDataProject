@@ -32,6 +32,25 @@ class MyPyTable:
         """
         print(tabulate(self.data, headers=self.column_names))
 
+    def get_key(self, header, key_list):
+        """
+
+        Args:
+            header: header of the data set
+            key_list: the list of what the key is represented as
+
+        Returns:
+            List of indecies of the key columns
+        """
+
+        key_index = []
+
+        for x in range(len(header)):
+            if header[x] in key_list:
+                key_index.append(x)
+
+        return key_index
+
     def get_shape(self):
         """Computes the dimension of the table (N x M).
 
