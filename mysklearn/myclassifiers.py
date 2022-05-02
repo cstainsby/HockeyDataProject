@@ -3,8 +3,9 @@ import operator
 import numpy as np
 import os
 
-from mysklearn import myutils
+from mysklearn import myevaluation, myutils
 from mysklearn.mysimplelinearregressor import MySimpleLinearRegressor
+import mysklearn
 
 class MySimpleLinearRegressionClassifier:
     """Represents a simple linear regression classifier that discretizes
@@ -344,7 +345,7 @@ class MyDecisionTreeClassifier:
         self.y_train = None
         self.tree = None
 
-    def fit(self, X_train, y_train):
+    def fit(self, X_train, y_train, F = None):
         """Fits a decision tree classifier to X_train and y_train using the TDIDT
         (top down induction of decision tree) algorithm.
 
@@ -353,6 +354,8 @@ class MyDecisionTreeClassifier:
                 The shape of X_train is (n_train_samples, n_features)
             y_train(list of obj): The target y values (parallel to X_train)
                 The shape of y_train is n_train_samples
+            F(int): size of subset created at each node, can be None in which case 
+                use all avalible attributes
 
         Notes:
             Since TDIDT is an eager learning algorithm, this method builds a decision tree model
@@ -375,7 +378,10 @@ class MyDecisionTreeClassifier:
         for type in domain:
             domain[type].sort()
         # also recall that python is pass by object reference
-        self.tree = myutils.tdidt(train, available_attributes, domain)
+        if F is None:
+            self.tree = myutils.tdidt(train, available_attributes, domain)
+        else:
+            self.tree = myutils.tdidt(train, available_attributes, domain, F)
 
 
     def predict(self, X_test):
@@ -513,3 +519,145 @@ class MyDecisionTreeClassifier:
         """Because of our attribute naming convention,
         we can look at the end of the string name to find the attributes original index"""
         return int(attribute_name[3:])
+
+
+class MyRandomForestClassifier():
+    """Represents a decision tree classifier.
+
+    Attributes:
+        X_train(list of list of obj): The list of training instances (samples).
+                The shape of X_train is (n_train_samples, n_features)
+        y_train(list of obj): The target y values (parallel to X_train).
+            The shape of y_train is n_samples
+        trees(list of MyDescisionTreeClassifiers)
+
+    """
+    def __init__(self):
+        """Initializer for MyRandomForestClassifier.
+        """
+        self.X_train = None
+        self.y_train = None
+        self.trees = None
+
+    def fit(self, X_train, y_train, N, M, F):
+        """Fits a decision tree classifier to X_train and y_train using the TDIDT
+        (top down induction of decision tree) algorithm.
+
+        Args:
+            X_train(list of list of obj): The list of training instances (samples).
+                The shape of X_train is (n_train_samples, n_features)
+            y_train(list of obj): The target y values (parallel to X_train)
+                The shape of y_train is n_train_samples
+            N(int): the number of "random" descision trees
+            F(int): num remaining attributes as candidates to partition on
+            M(int): num of most accurate trees to take(M < N)
+
+        Notes:
+            
+        """
+        self.X_train = X_train
+        self.y_train = y_train
+        
+        # generate N random trees
+        
+        # create trees 
+        trees = []                      # the list we will be storing the trees for the "forest"
+        parallel_accuracy_scores = []   # an accuracy score for each tree in the forest
+        # NOTE: we can change which metric we are using 
+        for _ in range(N):
+            # bootstrap indices to split up test and train sets
+            instance_indices = [i for i in range(len(X_train))]          
+            train_set_indices = self.compute_bootstraped_sample(instance_indices)
+            test_set_indices = [i for i in range(len(X_train)) if train_set_indices.count(i) == 0]
+            
+            # convert both index lists back to their instances list form
+            print("train set indicies: ", train_set_indices)
+            fit_instances = myutils.indices_list_to_instances(train_set_indices, X_train)
+            fit_classes = myutils.indices_list_to_instances(train_set_indices, y_train)
+            test_instances = myutils.indices_list_to_instances(test_set_indices, X_train)
+            test_classes = myutils.indices_list_to_instances(test_set_indices, y_train)
+
+            # fit the tree on the training instances 
+            new_tree = MyDecisionTreeClassifier()
+            new_tree.fit(fit_instances, fit_classes)
+
+            # compare the tree against the test cases
+            for test_obj in test_instances:
+                predictions = new_tree.predict(test_obj)
+                accuracy = myevaluation.accuracy_score(test_classes, predictions, normalize=True)
+
+                parallel_accuracy_scores.append(accuracy)
+
+            trees.append(new_tree)
+        
+        # find the M best performing trees
+        sorted_accuracies = sorted(parallel_accuracy_scores)
+        best_scores = sorted_accuracies[:M]
+        best_performing_trees = [trees[parallel_accuracy_scores.index(score)] for score in best_scores]
+
+        self.trees = best_performing_trees
+    
+    def compute_bootstraped_sample(self, table):
+        """finds bootstrap sample"""
+        n = len(table)
+        sample = []
+        for _ in range(n):
+            rand_index = np.random.randint(0, n) # Return random integers from low (inclusive) to high (exclusive)
+            sample.append(table[rand_index])
+        return sample 
+
+    def predict(self, X_test):
+        """Makes predictions for test instances in X_test.
+
+        Args:
+            X_test(list of list of obj): The list of testing samples
+                The shape of X_test is (n_test_samples, n_features)
+
+        Returns:
+            y_predicted(list of obj): The predicted target y values (parallel to X_test)
+        """
+        # majority voting 
+        # gather all predictions from each of the trees
+        prediction_matrix = []  # used to store each prediction from the trees (parallel)
+        for tree in self.trees:
+            tree_i_predictions = tree.predict(X_test)
+            prediction_matrix.append(tree_i_predictions)
+
+        # get the frequency of each item in each column 
+        # the freq list will be formed as
+        #       (list of cols) of 
+        #           (list of each cols attributes) of
+        #               att0: list of unique attributes found in the col
+        #               att1: parallel list of each of their frequencies
+        col_freq_list = [[] for _ in range(len(prediction_matrix[0]))]
+        for i in range(len(prediction_matrix[0])):
+            att_list = [prediction_matrix[j][i] for j in range(len(prediction_matrix))]
+
+            unique_att_list = []
+            parallel_freq_list = []
+            for attribute in att_list:
+                if unique_att_list.count(attribute) == 0:
+                    att_list.append(attribute)
+                    parallel_freq_list.append(1)
+                else:
+                    parallel_freq_list[att_list.index(attribute)] += 1
+            
+            col_freq_list[i].append(unique_att_list)
+            col_freq_list[i].append(parallel_freq_list)
+        
+        # get the most frequent attribute
+        # if there is a tie, pick the first one 
+        selected_attribute_list = []
+
+        for i in range(len(col_freq_list)):
+            attributes = col_freq_list[i][0]
+            frequencies = col_freq_list[i][1]
+
+            highest_frequency = 0
+            index_of_highest_frequency = 0
+            for j, freq in enumerate(frequencies):
+                if freq > highest_frequency:
+                    index_of_highest_frequency = j
+
+            selected_attribute_list.append(attributes[index_of_highest_frequency])
+

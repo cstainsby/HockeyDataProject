@@ -588,12 +588,18 @@ def compute_euclidean_distance(v1, v2):
     else:
         return 1
 
-def tdidt(current_instances, available_attributes, domain):
+def tdidt(current_instances, available_attributes, domain, F = None):
     # basic approach (uses recursion!!):
     #print("available_attributes:", available_attributes)
 
+    # here I'm limiting the choices of attribute down to the subset
+    #   if told to do so
+    attribute_subset = available_attributes
+    if F is not None:
+        attribute_subset = compute_random_subset(available_attributes, F)
+
     # select an attribute to split on
-    attribute = select_attribute(current_instances, available_attributes)
+    attribute = select_attribute(current_instances, attribute_subset)
     #print("splitting on attribute:", attribute)
     available_attributes.remove("att" + str(attribute))
     tree = ["Attribute", str("att" +str(attribute))]
@@ -652,6 +658,13 @@ def tdidt(current_instances, available_attributes, domain):
             tree.append(value_subtree)
 
     return tree
+
+def compute_random_subset(values, num_values):
+    """selects F random attributes, used to help tdidt for forest generation"""
+    # there is a function np.random.choice()
+    values_copy = values[:] # shallow copy
+    np.random.shuffle(values_copy) # in place shuffle
+    return values_copy[:num_values]
 
 
 def case2_helper(partitions):
