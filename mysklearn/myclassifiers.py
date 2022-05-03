@@ -308,14 +308,14 @@ class MyNaiveBayesClassifier:
         """
         y_predicted = []
         class_labels = list(self.priors.keys())
-        
         for test_item in X_test:
             best_value = 0
             best_index = 0
             for i, class_label in enumerate(class_labels):
                 prior_val = self.priors[class_label]
                 for j in range(len(test_item)):
-                    prior_val *= self.posteriors[j][test_item[j]][class_label]
+                    if test_item[j] in self.posteriors[j]:
+                        prior_val *= self.posteriors[j][test_item[j]][class_label]
                 if best_value < prior_val:
                     best_value = prior_val
                     best_index = i
@@ -470,8 +470,8 @@ class MyDecisionTreeClassifier:
             # base case when leaf is found
             if next_subtree[0] == "Leaf":
                 # make a random name to prevent naming collisions
-                leaf_name = next_subtree[1] + str(np.random.randint(0, 10000))
-                label = next_subtree[1] + " " + str(next_subtree[2]) + "/" + str(next_subtree[3]) # set the label as the value and the percent (frac)
+                leaf_name = str(next_subtree[1]) + str(np.random.randint(0, 10000))
+                label = str(next_subtree[1]) + " " + str(next_subtree[2]) + "/" + str(next_subtree[3]) # set the label as the value and the percent (frac)
                 dot_file.write(INDENTATION + str(leaf_name) + " [label=\"" + str(label) + "\"]\n")
 
                 edge_label = value[1] 

@@ -143,14 +143,14 @@ def matrix(true, pred):
     for x in range(len(pred)):
         str_true.append(str(true[x]))
         str_pred.append(str(pred[x]))
-    conf_matrix = myevaluation.confusion_matrix(str_true, str_pred, ["H","A"])
+    conf_matrix = myevaluation.confusion_matrix(str_true, str_pred, ["0.0","1.0","2.0","3.0","4.0","5.0"])
     for x in range(len(conf_matrix)):
         total = sum(conf_matrix[x])
         correct = conf_matrix[x][x]
         if x == 0:
-            conf_matrix[x].insert(0,"Won")
+            conf_matrix[x].insert(0,str(x))
         else:
-            conf_matrix[x].insert(0,"Lost")
+            conf_matrix[x].insert(0,str(x))
         conf_matrix[x].append(total)
         if correct == 0:
             conf_matrix[x].append(0)
@@ -211,6 +211,40 @@ def discretize_srs(table, index):
             row[index] = '11'
         elif val < 3:
             row[index] = '12'
+
+def discretize_sos(table, index):
+    for row in table:
+        val = float(row[index])
+        if val < -2.5:
+            row[index] = '1'
+        elif val < -2:
+            row[index] = '2'
+        elif val < -1.5:
+            row[index] = '3'
+        elif val < -1:
+            row[index] = '4'
+        elif val < -.5:
+            row[index] = '5'
+        elif val < 0:
+            row[index] = '6'
+        elif val < .5:
+            row[index] = '7'
+        elif val < 1:
+            row[index] = '8'
+        elif val < 1.5:
+            row[index] = '9'
+        elif val < 2:
+            row[index] = '10'
+        elif val < 2.5:
+            row[index] = '11'
+        elif val < 3:
+            row[index] = '12'
+
+def discretize_gf(table, index):
+    for row in table:
+        val = int(row[index])
+        new_val = round(val/10)
+        row[index] = new_val
 
 def cup_level_added(table):
     table.column_names.append("FINISH")
