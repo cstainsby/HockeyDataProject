@@ -132,7 +132,7 @@ class MyKNeighborsClassifier:
             distance_and_index_for_each_train = []
             # find distances for each index 
             for row, train_instance in enumerate(self.X_train):
-                d = myutils.distance(train_instance, test_instance)
+                d = myutils.compute_euclidean_distance(train_instance, test_instance)
                 distance_and_index_for_each_train.append([d, row])
 
             # find the closest instances
