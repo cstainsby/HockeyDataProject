@@ -1010,7 +1010,7 @@ def compute_unique_values(table):
             if value not in unique:
                 unique.append(value)
     for x in range(len(unique)):
-        unique[x] = [unique[x]]
+        unique[x] = [str(unique[x])]
     return sorted(list(unique))
 
 
