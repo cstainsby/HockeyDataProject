@@ -398,6 +398,10 @@ def indices_list_to_instances(list_of_index_groups, data):
             obj_data_table.append(data[index])
     return obj_data_table
 
+def indices_to_instances(list_of_indices, data):
+    """convert a 1D list of incides to instances"""
+    return [data[list_of_indices[i]] for i in range(len(list_of_indices))]
+
 
 def find_count_and_index_positions_of_each_col_items(table_without_labels):
     """

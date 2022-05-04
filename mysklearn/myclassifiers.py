@@ -527,8 +527,12 @@ class MyRandomForestClassifier():
         """
         self.X_train = X_train
         self.y_train = y_train
-        
-        # generate N random trees
+
+        # create the random stratified test set 
+        # consisting of one third of the original data set,
+        # with the remaining two thirds of the instances forming the "remainder set".
+        remain_X, remain_y, test_X, test_y = myevaluation.train_test_split(X_train, y_train, test_size=0.33)
+
         
         # create trees 
         trees = []                      # the list we will be storing the trees for the "forest"
@@ -536,20 +540,19 @@ class MyRandomForestClassifier():
         # NOTE: we can change which metric we are using 
         for _ in range(N):
             # bootstrap indices to split up test and train sets
-            instance_indices = [i for i in range(len(X_train))]          
+            instance_indices = [i for i in range(len(orig_train))]          
             train_set_indices = self.compute_bootstraped_sample(instance_indices)
-            test_set_indices = [i for i in range(len(X_train)) if train_set_indices.count(i) == 0]
+            test_set_indices = [i for i in range(len(orig_test)) if train_set_indices.count(i) == 0]
             
-            # convert both index lists back to their instances list form
-            print("train set indicies: ", train_set_indices)
-            fit_instances = myutils.indices_list_to_instances(train_set_indices, X_train)
-            fit_classes = myutils.indices_list_to_instances(train_set_indices, y_train)
-            test_instances = myutils.indices_list_to_instances(test_set_indices, X_train)
-            test_classes = myutils.indices_list_to_instances(test_set_indices, y_train)
+            # # convert both index lists back to their instances list form
+            # fit_instances = myutils.indices_to_instances(train_set_indices, X_train)
+            # fit_classes = myutils.indices_to_instances(train_set_indices, y_train)
+            # test_instances = myutils.indices_to_instances(test_set_indices, X_train)
+            # test_classes = myutils.indices_to_instances(test_set_indices, y_train)
 
             # fit the tree on the training instances 
             new_tree = MyDecisionTreeClassifier()
-            new_tree.fit(fit_instances, fit_classes)
+            new_tree.fit(fit_instances, fit_classes, F)
 
             # compare the tree against the test cases
             for test_obj in test_instances:
@@ -568,13 +571,15 @@ class MyRandomForestClassifier():
         self.trees = best_performing_trees
     
     def compute_bootstraped_sample(self, table):
-        """finds bootstrap sample"""
+        """finds bootstrap sample, returns a list of instances"""
         n = len(table)
-        sample = []
+        sample_indices = []
         for _ in range(n):
             rand_index = np.random.randint(0, n) # Return random integers from low (inclusive) to high (exclusive)
-            sample.append(table[rand_index])
-        return sample 
+            sample_indices.append(rand_index)
+
+        test_set_indices = [i for ]
+        return training_set, test_set
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
