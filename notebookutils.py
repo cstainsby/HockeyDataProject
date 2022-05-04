@@ -61,8 +61,7 @@ def descision_tree(cur_X_train, cur_X_test, table, X, y, keys):
     cur_y_train = []
     for val in cur_X_train:
         cur_y_train.append(y[val])
-
-    dt.fit(X_train, cur_y_train)
+    dt.fit(X_train, cur_y_train, 4)
     response = dt.predict(X_test)
     return response
 
