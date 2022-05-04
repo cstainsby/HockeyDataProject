@@ -79,9 +79,8 @@ class MyPyTable:
         try:
             col_index = self.column_names.index(col_identifier) # get the identifier's index 
 
-
             for i in range(0, len(self.data)):
-                if self.data[i][col_index] == "NA":
+                if self.data[i][col_index] == "":
 
                     if include_missing_values:
                         column_list.append(self.data[i][col_index])
@@ -292,7 +291,6 @@ class MyPyTable:
         """
         new_table_column_names = ["attribute", "min", "max", "mid", "avg", "median"]
         new_table_data = []
-
         for i in range(0, len(col_names)):
             try:
                 new_table_data_row = []
@@ -302,7 +300,6 @@ class MyPyTable:
 
                 # convert the column into a 1D list with get_column
                 col_list = self.get_column(col_names[i], False)
-
                 # min 
                 min_value = min(col_list)
                 new_table_data_row.append(min_value)
