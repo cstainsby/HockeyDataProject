@@ -528,38 +528,36 @@ class MyRandomForestClassifier():
         self.X_train = X_train
         self.y_train = y_train
 
-        # create the random stratified test set 
-        # consisting of one third of the original data set,
-        # with the remaining two thirds of the instances forming the "remainder set".
-        remain_X, remain_y, test_X, test_y = myevaluation.train_test_split(X_train, y_train, test_size=0.33)
+        # create test and remainder sets
+        remainder_X, remainder_y, test_X,  test_y = myevaluation.train_test_split(X_train, y_train, test_size=0.33) 
 
-        
         # create trees 
         trees = []                      # the list we will be storing the trees for the "forest"
         parallel_accuracy_scores = []   # an accuracy score for each tree in the forest
-        # NOTE: we can change which metric we are using 
         for _ in range(N):
-            # bootstrap indices to split up test and train sets
-            instance_indices = [i for i in range(len(orig_train))]          
-            train_set_indices = self.compute_bootstraped_sample(instance_indices)
-            test_set_indices = [i for i in range(len(orig_test)) if train_set_indices.count(i) == 0]
-            
-            # # convert both index lists back to their instances list form
-            # fit_instances = myutils.indices_to_instances(train_set_indices, X_train)
-            # fit_classes = myutils.indices_to_instances(train_set_indices, y_train)
-            # test_instances = myutils.indices_to_instances(test_set_indices, X_train)
-            # test_classes = myutils.indices_to_instances(test_set_indices, y_train)
+             # bootstrap the data
+            # create the random stratified test set 
+            # consisting of one third of the original data set,
+            # with the remaining two thirds of the instances forming the "remainder set".
+            training_indices, validation_indices = self.compute_bootstraped_indices(len(remainder_X))
+
+            # convert indices to instances 
+            fit_instances = [remainder_X[training_indices[i]] for i in range(len(training_indices))]
+            fit_classes = [test_X[training_indices[i]] for i in range(len(training_indices))]
+            test_instances = [remainder_X[validation_indices[i]] for i in range(len(validation_indices))]
+            test_classes = [test_X[validation_indices[i]] for i in range(len(validation_indices))]
 
             # fit the tree on the training instances 
             new_tree = MyDecisionTreeClassifier()
             new_tree.fit(fit_instances, fit_classes, F)
 
             # compare the tree against the test cases
-            for test_obj in test_instances:
-                predictions = new_tree.predict(test_obj)
-                accuracy = myevaluation.accuracy_score(test_classes, predictions, normalize=True)
-
-                parallel_accuracy_scores.append(accuracy)
+            # the validation set will be used to test
+            
+            predictions = new_tree.predict(test_instances)
+            accuracy = myevaluation.accuracy_score(test_classes, predictions, normalize=True)
+            
+            parallel_accuracy_scores.append(accuracy)
 
             trees.append(new_tree)
         
@@ -567,19 +565,22 @@ class MyRandomForestClassifier():
         sorted_accuracies = sorted(parallel_accuracy_scores)
         best_scores = sorted_accuracies[:M]
         best_performing_trees = [trees[parallel_accuracy_scores.index(score)] for score in best_scores]
-
+        
         self.trees = best_performing_trees
     
-    def compute_bootstraped_sample(self, table):
-        """finds bootstrap sample, returns a list of instances"""
-        n = len(table)
-        sample_indices = []
-        for _ in range(n):
-            rand_index = np.random.randint(0, n) # Return random integers from low (inclusive) to high (exclusive)
-            sample_indices.append(rand_index)
+    def compute_bootstraped_indices(self, table_size):
+        """finds bootstrap sample, returns a list of indices
+            train -> D random indices in table range
+            validation -> indices not chosen by random selection"""
+        training = []
+        validation = []
 
-        test_set_indices = [i for ]
-        return training_set, test_set
+        for _ in range(table_size):
+            rand_index = np.random.randint(0, table_size) # Return random integers from low (inclusive) to high (exclusive)
+            training.append(rand_index)
+        validation = [i for i in range(table_size) if training.count(i) == 0]
+
+        return training, validation
 
     def predict(self, X_test):
         """Makes predictions for test instances in X_test.
@@ -598,41 +599,21 @@ class MyRandomForestClassifier():
             tree_i_predictions = tree.predict(X_test)
             prediction_matrix.append(tree_i_predictions)
 
-        # get the frequency of each item in each column 
-        # the freq list will be formed as
-        #       (list of cols) of 
-        #           (list of each cols attributes) of
-        #               att0: list of unique attributes found in the col
-        #               att1: parallel list of each of their frequencies
-        col_freq_list = [[] for _ in range(len(prediction_matrix[0]))]
-        for i in range(len(prediction_matrix[0])):
-            att_list = [prediction_matrix[j][i] for j in range(len(prediction_matrix))]
+        # indexed by col number, 
+        # value is the most common element 
+        col_votes = []
+        if len(self.trees) > 0:
+            # make sure there are trees to count 
+            for i in range(len(prediction_matrix[0])):
+                col_votes.append(prediction_matrix[0][i])
 
-            unique_att_list = []
-            parallel_freq_list = []
-            for attribute in att_list:
-                if unique_att_list.count(attribute) == 0:
-                    att_list.append(attribute)
-                    parallel_freq_list.append(1)
-                else:
-                    parallel_freq_list[att_list.index(attribute)] += 1
-            
-            col_freq_list[i].append(unique_att_list)
-            col_freq_list[i].append(parallel_freq_list)
-        
-        # get the most frequent attribute
-        # if there is a tie, pick the first one 
-        selected_attribute_list = []
+                # find the most frequent element
+                most_common_element_count = 0
+                elements_in_col = [prediction_matrix[j][i] for j in range(len(prediction_matrix))]
+                
+                for element in elements_in_col:
+                    if elements_in_col.count(element) > most_common_element_count:
+                        most_common_element_count = elements_in_col.count(element)
+                        col_votes[i] = element
 
-        for i in range(len(col_freq_list)):
-            attributes = col_freq_list[i][0]
-            frequencies = col_freq_list[i][1]
-
-            highest_frequency = 0
-            index_of_highest_frequency = 0
-            for j, freq in enumerate(frequencies):
-                if freq > highest_frequency:
-                    index_of_highest_frequency = j
-
-            selected_attribute_list.append(attributes[index_of_highest_frequency])
-
+        return col_votes

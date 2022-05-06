@@ -46,7 +46,6 @@ def train_test_split(X, y, test_size=0.33, random_state=None, shuffle=True):
         test_size = float(test_size)/len(y)
 
     for i, index in enumerate(index_list):
-        print(len(y) - math.ceil(len(y) * test_size))
         if i < len(y) - math.ceil(len(y) * test_size):
             # while in the range of train data add to train list
             X_train.append(X[index])

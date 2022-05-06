@@ -1000,7 +1000,7 @@ def make_ck(itemset):
 def compute_unique_values(table):
     """
     computes the unique values
-    I feel like all my descriptions are stupid because i keep just saying what the function
+    I feel like al descriptions are stupid because i keep just saying what the function
     title is, but its not wrong so :|
     Args:
         table: the table of values

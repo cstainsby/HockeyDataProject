@@ -1,5 +1,5 @@
 from mysklearn import myevaluation
-from mysklearn.myclassifiers import MyKNeighborsClassifier, MyNaiveBayesClassifier, MyDummyClassifier, MyDecisionTreeClassifier
+from mysklearn.myclassifiers import MyKNeighborsClassifier, MyNaiveBayesClassifier, MyDummyClassifier, MyDecisionTreeClassifier, MyRandomForestClassifier
 
 
 def knn_fold(cur_X_train, cur_X_test, X, y, table, keys):
@@ -95,6 +95,20 @@ def kfoldstrat(table, X, y, identifier, keys):
         strat_dummy_pred = complete
         strat_dummy_true = true
         return true, complete
+    elif identifier == "rand_forest":
+        train_folds, test_folds = myevaluation.stratified_kfold_cross_validation(X, y, 10)
+        complete = []
+        true = []
+        for fold in test_folds:
+            for val in fold:
+                true.append(y[val])
+        for x in range(len(train_folds)):
+            pred = randomForest(train_folds[x], test_folds[x], table, X, y, keys)
+            for val in pred:
+                complete.append(val)
+        strat_dummy_pred = complete
+        strat_dummy_true = true
+        return true, complete
     else:
         train_folds, test_folds = myevaluation.stratified_kfold_cross_validation(X, y, 10)
         complete = []
@@ -110,6 +124,28 @@ def kfoldstrat(table, X, y, identifier, keys):
         strat_dummy_true = true
         return true, complete
 
+def randomForest(cur_X_train, cur_X_test, table, X, y, keys):
+    rand_forest = MyRandomForestClassifier()
+    X_test = []
+    X_train = []
+    tree_keys = table.get_key(table.column_names, keys)
+    for val in cur_X_train:
+        instance = []
+        for key in tree_keys:
+            instance.append(X[val][key])
+        X_train.append(instance)
+    for val in cur_X_test:
+        instance = []
+        for key in tree_keys:
+            instance.append(X[val][key])
+        X_test.append(instance)
+
+    cur_y_train = []
+    for val in cur_X_train:
+        cur_y_train.append(y[val])
+    rand_forest.fit(X_train, cur_y_train, 5, 2, 4)
+    response = rand_forest.predict(X_test)
+    return response
 
 def naivebayes(cur_X_train, cur_X_test, table, X, y, keys):
     nb = MyNaiveBayesClassifier()
