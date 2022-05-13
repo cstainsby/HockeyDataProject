@@ -13,7 +13,7 @@ Our class labels included:
 
 ### For reference for People Who Don't Watch Hockey
 Here is a sample playoff bracket with labels 
-<img src="https://i.redd.it/we47inh7o6g51.png"/>
+<img src="https://i.redd.it/we47inh7o6g51.png" style="width:500px;"/>
 
 ## Project Structure
 ### Initial Plans 
